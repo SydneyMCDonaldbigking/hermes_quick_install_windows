@@ -5,6 +5,18 @@
 const { contextBridge, ipcRenderer } = require('electron');
 
 // ============================================================
+// 给 splash 窗口暴露 ipcRenderer（用于接收消息）
+// ============================================================
+
+contextBridge.exposeInMainWorld('ipcRenderer', {
+    on: (channel, listener) => ipcRenderer.on(channel, listener),
+    once: (channel, listener) => ipcRenderer.once(channel, listener),
+    off: (channel, listener) => ipcRenderer.off(channel, listener),
+    invoke: (channel, ...args) => ipcRenderer.invoke(channel, ...args),
+    send: (channel, ...args) => ipcRenderer.send(channel, ...args)
+});
+
+// ============================================================
 // 暴露给渲染进程的 API
 // ============================================================
 

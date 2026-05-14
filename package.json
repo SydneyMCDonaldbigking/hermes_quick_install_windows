@@ -19,7 +19,8 @@
     "build:all": "electron-builder --win --publish never",
     "dist": "electron-builder",
     "pack": "electron-builder --dir",
-    "prestart": "npm run check-env"
+    "prestart": "npm run check-env",
+    "check-env": "powershell -NoProfile -ExecutionPolicy Bypass -File ./scripts/check-env.ps1"
   },
   "devDependencies": {
     "electron": "^latest",
@@ -87,4 +88,4 @@
     },
     "fileAssociations": []
   }
-}}
+}

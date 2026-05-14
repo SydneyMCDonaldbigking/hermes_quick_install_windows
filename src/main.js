@@ -501,45 +501,173 @@ ipcMain.handle('chat:test-connection', async (event) => {
 });
 
 // ============================================================
+// 自动初始化函数
+// ============================================================
+
+/**
+ * 执行自动初始化（WSL2 + Hermes 安装）
+ */
+function performAutoSetup() {
+    return new Promise((resolve, reject) => {
+        const scriptPath = path.join(__dirname, '../scripts/auto-setup.ps1');
+        
+        if (!fs.existsSync(scriptPath)) {
+            reject(new Error('初始化脚本不存在'));
+            return;
+        }
+
+        const psCommand = `powershell -NoProfile -ExecutionPolicy Bypass -File "${scriptPath}"`;
+        const child = spawn('cmd.exe', ['/s', '/c', psCommand], {
+            stdio: ['ignore', 'pipe', 'pipe'],
+            encoding: 'utf-8'
+        });
+
+        let stdout = '';
+        let stderr = '';
+
+        if (child.stdout) {
+            child.stdout.on('data', (data) => {
+                stdout += data;
+                console.log('[Setup]', data);
+            });
+        }
+
+        if (child.stderr) {
+            child.stderr.on('data', (data) => {
+                stderr += data;
+                console.error('[Setup Error]', data);
+            });
+        }
+
+        child.on('close', (code) => {
+            if (code === 0) {
+                // 解析 JSON 结果
+                try {
+                    const jsonMatch = stdout.match(/\{[\s\S]*\}/);
+                    const result = jsonMatch ? JSON.parse(jsonMatch[0]) : { success: true };
+                    resolve(result);
+                } catch (e) {
+                    resolve({ success: true, message: 'Setup completed' });
+                }
+            } else {
+                reject(new Error(`Setup failed with code ${code}: ${stderr}`));
+            }
+        });
+    });
+}
+
+/**
+ * 创建初始化加载窗口
+ */
+function createSplashWindow() {
+    const splash = new BrowserWindow({
+        width: 600,
+        height: 400,
+        frame: false,
+        alwaysOnTop: true,
+        webPreferences: {
+            preload: path.join(__dirname, 'preload.js'),
+            contextIsolation: true,
+            enableRemoteModule: false,
+            nodeIntegration: false,
+            sandbox: true
+        },
+        icon: path.join(__dirname, '../assets/icon.ico')
+    });
+
+    splash.loadFile(path.join(__dirname, '../public/splash.html'));
+    
+    if (process.env.NODE_ENV === 'development') {
+        splash.webContents.openDevTools();
+    }
+
+    return splash;
+}
+
+/**
+ * 更新加载窗口的消息
+ */
+function updateSplashMessage(splashWindow, message) {
+    if (splashWindow && !splashWindow.isDestroyed()) {
+        splashWindow.webContents.send('splash:update-message', message);
+    }
+}
+
+// ============================================================
 // 应用启动和关闭
 // ============================================================
 
-app.on('ready', () => {
-    createMainWindow();
-    
-    // 创建菜单
-    const template = [
-        {
-            label: '文件',
-            submenu: [
-                {
-                    label: '退出',
-                    accelerator: 'CmdOrCtrl+Q',
-                    click: () => {
-                        app.quit();
-                    }
-                }
-            ]
-        },
-        {
-            label: '帮助',
-            submenu: [
-                {
-                    label: '关于',
-                    click: () => {
-                        dialog.showMessageBox(mainWindow, {
-                            type: 'info',
-                            title: '关于 Hermes 启动器',
-                            message: 'Hermes Agent Windows 一键启动器',
-                            detail: `版本: 0.1.0\n作者: Hermes Team\nElectron: ${process.versions.electron}`
-                        });
-                    }
-                }
-            ]
+app.on('ready', async () => {
+    try {
+        // 创建加载窗口
+        const splash = createSplashWindow();
+        
+        updateSplashMessage(splash, '准备初始化环境...');
+        
+        // 执行自动初始化
+        console.log('[App] 开始自动初始化');
+        updateSplashMessage(splash, '正在检查 WSL2...');
+        updateSplashMessage(splash, '正在检查 Hermes...');
+        
+        try {
+            const setupResult = await performAutoSetup();
+            console.log('[App] 初始化结果:', setupResult);
+            updateSplashMessage(splash, '✓ 环境已就绪，正在启动主界面...');
+        } catch (error) {
+            console.error('[App] 初始化出错:', error);
+            updateSplashMessage(splash, `⚠️ 初始化出现问题: ${error.message}\n请手动运行 scripts/auto-setup.ps1`);
+            
+            // 等待 3 秒后继续启动（允许用户看到错误信息）
+            await new Promise(r => setTimeout(r, 3000));
         }
-    ];
-    
-    Menu.setApplicationMenu(Menu.buildFromTemplate(template));
+        
+        // 关闭加载窗口
+        if (splash && !splash.isDestroyed()) {
+            splash.close();
+        }
+        
+        // 创建主窗口
+        createMainWindow();
+        
+        // 创建菜单
+        const template = [
+            {
+                label: '文件',
+                submenu: [
+                    {
+                        label: '退出',
+                        accelerator: 'CmdOrCtrl+Q',
+                        click: () => {
+                            app.quit();
+                        }
+                    }
+                ]
+            },
+            {
+                label: '帮助',
+                submenu: [
+                    {
+                        label: '关于',
+                        click: () => {
+                            dialog.showMessageBox(mainWindow, {
+                                type: 'info',
+                                title: '关于 Hermes 启动器',
+                                message: 'Hermes Agent Windows 一键启动器',
+                                detail: `版本: 0.1.0\n作者: Hermes Team\nElectron: ${process.versions.electron}`
+                            });
+                        }
+                    }
+                ]
+            }
+        ];
+        
+        Menu.setApplicationMenu(Menu.buildFromTemplate(template));
+        
+    } catch (error) {
+        console.error('[App] 致命错误:', error);
+        dialog.showErrorBox('启动失败', `应用启动出错: ${error.message}`);
+        app.quit();
+    }
 });
 
 app.on('window-all-closed', () => {

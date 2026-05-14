@@ -1,0 +1,290 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Hermes 启动器 - 初始化中</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            width: 600px;
+            height: 400px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Microsoft YaHei', sans-serif;
+            color: white;
+            user-select: none;
+            overflow: hidden;
+        }
+
+        .container {
+            text-align: center;
+            animation: fadeIn 0.5s ease-in;
+        }
+
+        @keyframes fadeIn {
+            from {
+                opacity: 0;
+                transform: translateY(-20px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        .logo {
+            font-size: 64px;
+            margin-bottom: 20px;
+            animation: bounce 2s infinite;
+        }
+
+        @keyframes bounce {
+            0%, 100% {
+                transform: translateY(0);
+            }
+            50% {
+                transform: translateY(-10px);
+            }
+        }
+
+        h1 {
+            font-size: 32px;
+            font-weight: 600;
+            margin-bottom: 10px;
+            letter-spacing: 1px;
+        }
+
+        .subtitle {
+            font-size: 14px;
+            opacity: 0.9;
+            margin-bottom: 40px;
+        }
+
+        .progress-container {
+            width: 300px;
+            margin: 30px 0;
+        }
+
+        .progress-bar {
+            width: 100%;
+            height: 4px;
+            background-color: rgba(255, 255, 255, 0.2);
+            border-radius: 2px;
+            overflow: hidden;
+            margin-bottom: 15px;
+        }
+
+        .progress-fill {
+            height: 100%;
+            background: linear-gradient(90deg, #fff, #f0f0f0);
+            border-radius: 2px;
+            animation: progress 3s infinite;
+            width: 40%;
+        }
+
+        @keyframes progress {
+            0% {
+                width: 0%;
+            }
+            50% {
+                width: 100%;
+            }
+            100% {
+                width: 0%;
+            }
+        }
+
+        .spinner {
+            display: inline-block;
+            width: 20px;
+            height: 20px;
+            border: 3px solid rgba(255, 255, 255, 0.3);
+            border-top-color: white;
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+            margin-right: 10px;
+            vertical-align: middle;
+        }
+
+        @keyframes spin {
+            to {
+                transform: rotate(360deg);
+            }
+        }
+
+        .message {
+            font-size: 14px;
+            min-height: 20px;
+            margin-top: 20px;
+            opacity: 0.95;
+            word-wrap: break-word;
+            animation: slideIn 0.4s ease-out;
+        }
+
+        @keyframes slideIn {
+            from {
+                opacity: 0;
+                transform: translateX(-20px);
+            }
+            to {
+                opacity: 1;
+                transform: translateX(0);
+            }
+        }
+
+        .steps {
+            margin-top: 30px;
+            font-size: 12px;
+            opacity: 0.8;
+            max-height: 100px;
+            overflow-y: auto;
+        }
+
+        .step {
+            padding: 8px 0;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+        }
+
+        .step:last-child {
+            border-bottom: none;
+        }
+
+        .step.pending {
+            color: rgba(255, 255, 255, 0.6);
+        }
+
+        .step.active {
+            color: white;
+            font-weight: 600;
+        }
+
+        .step.completed {
+            color: #4ade80;
+        }
+
+        .step.error {
+            color: #f87171;
+        }
+
+        .step::before {
+            content: '';
+            display: inline-block;
+            width: 16px;
+            margin-right: 8px;
+        }
+
+        .step.pending::before {
+            content: '○';
+            opacity: 0.5;
+        }
+
+        .step.active::before {
+            content: '◌';
+            animation: pulse 1s infinite;
+        }
+
+        .step.completed::before {
+            content: '✓';
+        }
+
+        .step.error::before {
+            content: '✗';
+        }
+
+        @keyframes pulse {
+            0%, 100% {
+                opacity: 1;
+            }
+            50% {
+                opacity: 0.5;
+            }
+        }
+
+        .footer {
+            position: absolute;
+            bottom: 20px;
+            font-size: 11px;
+            opacity: 0.6;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="logo">🚀</div>
+        <h1>Hermes Agent</h1>
+        <p class="subtitle">启动器初始化中...</p>
+
+        <div class="progress-container">
+            <div class="progress-bar">
+                <div class="progress-fill"></div>
+            </div>
+            
+            <div class="message">
+                <span class="spinner"></span>
+                <span id="message-text">准备初始化环境...</span>
+            </div>
+        </div>
+
+        <div class="steps" id="steps">
+            <div class="step pending" id="step-wsl2">检查 WSL2</div>
+            <div class="step pending" id="step-hermes">检查 Hermes</div>
+            <div class="step pending" id="step-gateway">启动 Gateway</div>
+        </div>
+    </div>
+
+    <div class="footer">版本 0.1.0 | Hermes Team</div>
+
+    <script>
+        // 监听来自主进程的消息更新
+        if (window.ipcRenderer) {
+            window.ipcRenderer.on('splash:update-message', (event, message) => {
+                const messageEl = document.getElementById('message-text');
+                if (messageEl) {
+                    messageEl.textContent = message;
+                    messageEl.parentElement.style.animation = 'none';
+                    setTimeout(() => {
+                        messageEl.parentElement.style.animation = 'slideIn 0.4s ease-out';
+                    }, 10);
+                }
+            });
+        }
+
+        // 模拟步骤更新
+        setTimeout(() => {
+            const step = document.getElementById('step-wsl2');
+            if (step) {
+                step.className = 'step active';
+                setTimeout(() => {
+                    step.className = 'step completed';
+                }, 2000);
+            }
+        }, 500);
+
+        setTimeout(() => {
+            const step = document.getElementById('step-hermes');
+            if (step) {
+                step.className = 'step active';
+                setTimeout(() => {
+                    step.className = 'step completed';
+                }, 2000);
+            }
+        }, 3000);
+
+        setTimeout(() => {
+            const step = document.getElementById('step-gateway');
+            if (step) {
+                step.className = 'step active';
+            }
+        }, 5000);
+    </script>
+</body>
+</html>
