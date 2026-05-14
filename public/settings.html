@@ -1,0 +1,294 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Hermes - 设置</title>
+    <link rel="stylesheet" href="styles.css">
+    <style>
+        /* Settings 特定样式 */
+        .settings-container {
+            max-width: 600px;
+            margin: 0 auto;
+        }
+
+        .setting-section {
+            background: var(--bg-secondary);
+            border: 1px solid var(--border-color);
+            border-radius: var(--border-radius);
+            padding: 20px;
+            margin-bottom: 20px;
+        }
+
+        .setting-section h3 {
+            margin-top: 0;
+            margin-bottom: 16px;
+            color: var(--text-primary);
+            font-size: 16px;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .setting-section h3::before {
+            content: '';
+            display: inline-block;
+            width: 3px;
+            height: 18px;
+            background: var(--primary-color);
+            border-radius: 2px;
+        }
+
+        .setting-item {
+            margin-bottom: 16px;
+            padding-bottom: 16px;
+            border-bottom: 1px solid var(--border-color);
+        }
+
+        .setting-item:last-child {
+            margin-bottom: 0;
+            padding-bottom: 0;
+            border-bottom: none;
+        }
+
+        .setting-item label {
+            display: block;
+            font-weight: 600;
+            margin-bottom: 8px;
+            color: var(--text-primary);
+        }
+
+        .setting-item input,
+        .setting-item textarea {
+            width: 100%;
+            padding: 10px;
+            border: 1px solid var(--border-color);
+            border-radius: var(--border-radius);
+            font-size: 14px;
+            font-family: 'Monaco', 'Courier New', monospace;
+        }
+
+        .setting-item textarea {
+            min-height: 80px;
+            resize: vertical;
+        }
+
+        .setting-item input:focus,
+        .setting-item textarea:focus {
+            outline: none;
+            border-color: var(--primary-color);
+            box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
+        }
+
+        .setting-item-hint {
+            font-size: 12px;
+            color: var(--text-secondary);
+            margin-top: 6px;
+        }
+
+        .setting-status {
+            display: inline-block;
+            padding: 4px 12px;
+            border-radius: 12px;
+            font-size: 12px;
+            font-weight: 600;
+        }
+
+        .status-configured {
+            background: rgba(16, 185, 129, 0.1);
+            color: var(--success-color);
+        }
+
+        .status-not-configured {
+            background: rgba(239, 68, 68, 0.1);
+            color: var(--danger-color);
+        }
+
+        .button-group-vertical {
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+            margin-top: 12px;
+        }
+
+        .button-group-vertical .btn {
+            width: 100%;
+            justify-content: center;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <header class="header">
+            <h1>⚙️ 设置</h1>
+        </header>
+
+        <main class="main-content">
+            <div class="settings-container">
+                <!-- 飞书配置 -->
+                <div class="setting-section">
+                    <h3>飞书机器人</h3>
+                    
+                    <div class="setting-item">
+                        <label>
+                            状态
+                            <span id="feishu-status" class="setting-status status-not-configured">未配置</span>
+                        </label>
+                    </div>
+
+                    <div class="setting-item">
+                        <label>App ID</label>
+                        <input type="text" id="feishu-app-id" placeholder="从飞书开放平台复制">
+                        <div class="setting-item-hint">
+                            应用唯一标识符，从 https://open.feishu.cn 获得
+                        </div>
+                    </div>
+
+                    <div class="setting-item">
+                        <label>App Secret</label>
+                        <input type="password" id="feishu-app-secret" placeholder="应用密钥（保持机密）">
+                        <div class="setting-item-hint">
+                            应用密钥，用于认证，请妥善保管
+                        </div>
+                    </div>
+
+                    <div class="button-group-vertical">
+                        <button class="btn btn-primary" onclick="saveFeishuConfig()">
+                            💾 保存配置
+                        </button>
+                        <button class="btn btn-info" onclick="testFeishuConnection()">
+                            🔗 测试连接
+                        </button>
+                    </div>
+                </div>
+
+                <!-- 微信配置 -->
+                <div class="setting-section">
+                    <h3>微信机器人 ⚠️ 注意</h3>
+                    
+                    <div style="background: rgba(239, 68, 68, 0.1); border-left: 3px solid var(--danger-color); padding: 12px; border-radius: var(--border-radius); margin-bottom: 16px;">
+                        <strong style="color: var(--danger-color);">重要警告：</strong> 用于登录的微信账号将被锁定为机器人身份，<strong>无法进行正常聊天</strong>。
+                        <br>建议使用专用小号。
+                    </div>
+
+                    <div class="setting-item">
+                        <label>
+                            状态
+                            <span id="weixin-status" class="setting-status status-not-configured">未配置</span>
+                        </label>
+                    </div>
+
+                    <div class="setting-item">
+                        <label>登录状态</label>
+                        <div id="weixin-login-status" style="padding: 10px; background: var(--bg-tertiary); border-radius: var(--border-radius); color: var(--text-secondary);">
+                            未登录
+                        </div>
+                        <div class="setting-item-hint">
+                            点击下方按钮开始微信扫码登录
+                        </div>
+                    </div>
+
+                    <div class="button-group-vertical">
+                        <button class="btn btn-primary" onclick="startWechatLogin()">
+                            📱 扫码登录
+                        </button>
+                        <button class="btn btn-danger" onclick="logoutWeixin()">
+                            🚪 退出登录
+                        </button>
+                    </div>
+                </div>
+
+                <!-- 代理设置 -->
+                <div class="setting-section">
+                    <h3>网络代理</h3>
+                    
+                    <div class="setting-item">
+                        <label>
+                            <input type="checkbox" id="proxy-enabled" onchange="toggleProxySettings()">
+                            启用代理
+                        </label>
+                    </div>
+
+                    <div id="proxy-settings" style="display: none;">
+                        <div class="setting-item">
+                            <label>代理类型</label>
+                            <select id="proxy-type" style="width: 100%; padding: 10px; border: 1px solid var(--border-color); border-radius: var(--border-radius);">
+                                <option value="http">HTTP</option>
+                                <option value="https">HTTPS</option>
+                                <option value="socks5">SOCKS5</option>
+                            </select>
+                        </div>
+
+                        <div class="setting-item">
+                            <label>代理地址</label>
+                            <input type="text" id="proxy-host" placeholder="127.0.0.1">
+                        </div>
+
+                        <div class="setting-item">
+                            <label>代理端口</label>
+                            <input type="number" id="proxy-port" placeholder="1080" min="1" max="65535">
+                        </div>
+
+                        <button class="btn btn-primary" style="width: 100%; margin-top: 12px;" onclick="testProxy()">
+                            🔍 测试代理
+                        </button>
+                    </div>
+
+                    <div class="setting-item-hint">
+                        仅在需要翻墙或使用企业代理时启用
+                    </div>
+                </div>
+
+                <!-- 高级设置 -->
+                <div class="setting-section">
+                    <h3>高级设置</h3>
+                    
+                    <div class="setting-item">
+                        <label>
+                            <input type="checkbox" id="debug-mode">
+                            调试模式
+                        </label>
+                        <div class="setting-item-hint">
+                            启用后会输出更详细的日志信息
+                        </div>
+                    </div>
+
+                    <div class="setting-item">
+                        <label>日志级别</label>
+                        <select id="log-level" style="width: 100%; padding: 10px; border: 1px solid var(--border-color); border-radius: var(--border-radius);">
+                            <option value="info">信息</option>
+                            <option value="debug">调试</option>
+                            <option value="trace">跟踪</option>
+                        </select>
+                    </div>
+
+                    <div class="button-group-vertical" style="margin-top: 16px;">
+                        <button class="btn btn-secondary" onclick="exportConfig()">
+                            📥 导出配置
+                        </button>
+                        <button class="btn btn-warning" onclick="resetSettings()">
+                            🔄 重置所有设置
+                        </button>
+                    </div>
+                </div>
+
+                <!-- 操作按钮 -->
+                <div style="display: flex; gap: 12px; margin-top: 24px;">
+                    <button class="btn btn-primary" style="flex: 1;" onclick="saveAllSettings()">
+                        💾 保存所有设置
+                    </button>
+                    <button class="btn btn-secondary" style="flex: 1;" onclick="closeSettings()">
+                        ✕ 关闭
+                    </button>
+                </div>
+            </div>
+        </main>
+
+        <footer class="footer">
+            <span>Hermes Agent 设置</span>
+        </footer>
+    </div>
+
+    <script src="settings.js"></script>
+</body>
+</html>

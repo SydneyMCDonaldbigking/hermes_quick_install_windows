@@ -1,0 +1,90 @@
+{
+  "name": "hermes-launcher",
+  "version": "1.0.0",
+  "description": "Hermes Agent Windows 一键启动器",
+  "main": "src/main.js",
+  "homepage": "./",
+  "author": {
+    "name": "Hermes Team",
+    "email": "support@hermes-agent.io"
+  },
+  "license": "MIT",
+  "scripts": {
+    "start": "electron .",
+    "dev": "cross-env NODE_ENV=development electron .",
+    "build": "electron-builder",
+    "build:win": "electron-builder --win --publish never",
+    "build:portable": "electron-builder --win portable --publish never",
+    "build:installer": "electron-builder --win nsis --publish never",
+    "build:all": "electron-builder --win --publish never",
+    "dist": "electron-builder",
+    "pack": "electron-builder --dir",
+    "prestart": "npm run check-env"
+  },
+  "devDependencies": {
+    "electron": "^latest",
+    "electron-builder": "^latest",
+    "cross-env": "^7.0.3"
+  },
+  "dependencies": {
+    "sudo-prompt": "^9.2.1",
+    "http-proxy-agent": "^7.0.0",
+    "https-proxy-agent": "^7.0.2"
+  },
+  "build": {
+    "appId": "io.hermes.launcher",
+    "productName": "Hermes 启动器",
+    "artifactName": "${productName}-${version}-${arch}.${ext}",
+    "files": [
+      "src/**/*",
+      "public/**/*",
+      "scripts/**/*",
+      "node_modules/**/*",
+      "package.json"
+    ],
+    "directories": {
+      "buildResources": "assets",
+      "output": "dist"
+    },
+    "win": {
+      "target": [
+        {
+          "target": "nsis",
+          "arch": [
+            "x64"
+          ]
+        },
+        {
+          "target": "portable",
+          "arch": [
+            "x64"
+          ]
+        }
+      ],
+      "certificateFile": null,
+      "certificatePassword": null,
+      "signingHashAlgorithms": [
+        "sha256"
+      ],
+      "sign": null,
+      "icon": "assets/icon.ico"
+    },
+    "nsis": {
+      "oneClick": false,
+      "allowToChangeInstallationDirectory": true,
+      "createDesktopShortcut": true,
+      "createStartMenuShortcut": true,
+      "shortcutName": "Hermes 启动器",
+      "artifactName": "${productName}-Setup-${version}-${arch}.${ext}",
+      "installerIcon": "assets/installerIcon.ico",
+      "uninstallerIcon": "assets/installerIcon.ico",
+      "installerHeader": "assets/installerHeader.bmp",
+      "installerSidebar": "assets/installerSidebar.bmp",
+      "include": "assets/installer.nsi"
+    },
+    "portable": {
+      "artifactName": "${productName}-${version}-portable.${ext}"
+    },
+    "fileAssociations": []
+  }
+}}

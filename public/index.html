@@ -1,0 +1,149 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Hermes 启动器</title>
+    <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+    <div class="container">
+        <!-- 头部 -->
+        <header class="header">
+            <div class="header-left">
+                <h1>🚀 Hermes Agent</h1>
+                <p>官方自主代理系统启动器</p>
+            </div>
+            <div class="header-right">
+                <span id="status-indicator" class="status-indicator status-stopped">离线</span>
+            </div>
+        </header>
+
+        <!-- 主内容区域 -->
+        <main class="main-content">
+            <!-- 状态面板 -->
+            <section class="status-panel">
+                <h2>状态信息</h2>
+                <div class="status-grid">
+                    <div class="status-item">
+                        <label>运行状态</label>
+                        <div id="status-running" class="status-value">未运行</div>
+                    </div>
+                    <div class="status-item">
+                        <label>连接状态</label>
+                        <div id="status-connection" class="status-value">未连接</div>
+                    </div>
+                    <div class="status-item">
+                        <label>访问地址</label>
+                        <div id="status-address" class="status-value">-</div>
+                    </div>
+                    <div class="status-item">
+                        <label>内存占用</label>
+                        <div id="status-memory" class="status-value">-</div>
+                    </div>
+                    <div class="status-item">
+                        <label>运行时间</label>
+                        <div id="status-uptime" class="status-value">-</div>
+                    </div>
+                    <div class="status-item">
+                        <label>进程 ID</label>
+                        <div id="status-pid" class="status-value">-</div>
+                    </div>
+                </div>
+            </section>
+
+            <!-- 控制按钮区域 -->
+            <section class="control-panel">
+                <h2>控制面板</h2>
+                <div class="button-group">
+                    <button id="btn-start" class="btn btn-primary" onclick="handleStart()">
+                        ▶️ 启动 Gateway
+                    </button>
+                    <button id="btn-stop" class="btn btn-danger" onclick="handleStop()" disabled>
+                        ⏹️ 停止 Gateway
+                    </button>
+                    <button id="btn-restart" class="btn btn-secondary" onclick="handleRestart()" disabled>
+                        🔄 重启 Gateway
+                    </button>
+                    <button id="btn-test" class="btn btn-info" onclick="handleTest()">
+                        🔍 测试连接
+                    </button>
+                </div>
+
+                <div class="button-group">
+                    <button id="btn-fix-network" class="btn btn-warning" onclick="handleFixNetwork()">
+                        🌐 修复网络
+                    </button>
+                    <button id="btn-logs" class="btn btn-secondary" onclick="handleShowLogs()">
+                        📋 查看日志
+                    </button>
+                    <button id="btn-settings" class="btn btn-secondary" onclick="handleSettings()">
+                        ⚙️ 设置
+                    </button>
+                </div>
+            </section>
+
+            <!-- 消息输出区域 -->
+            <section class="message-panel">
+                <h2>消息输出</h2>
+                <div id="message-output" class="message-output">
+                    <p class="message info">✓ 应用已启动，准备就绪</p>
+                </div>
+                <button class="btn btn-small" onclick="clearMessages()">清空</button>
+            </section>
+
+            <!-- 聊天框区域 -->
+            <section class="chat-panel">
+                <h2>💬 聊天助手</h2>
+                <div class="chat-container">
+                    <div id="chat-messages" class="chat-messages">
+                        <div class="chat-message assistant">
+                            <div class="chat-content">👋 你好！我是 Hermes AI 助手，有什么我可以帮你的吗？</div>
+                        </div>
+                    </div>
+                    <div class="chat-input-area">
+                        <input 
+                            type="text" 
+                            id="chat-input" 
+                            class="chat-input" 
+                            placeholder="输入你的问题..."
+                            onkeypress="handleChatKeyPress(event)"
+                        >
+                        <button id="chat-send-btn" class="btn btn-primary btn-small" onclick="handleChatSend()">
+                            📤 发送
+                        </button>
+                    </div>
+                    <div id="chat-status" class="chat-status"></div>
+                </div>
+            </section>
+        </main>
+
+        <!-- 底部状态栏 -->
+        <footer class="footer">
+            <span id="footer-status">✓ 就绪</span>
+            <span id="footer-time"></span>
+        </footer>
+    </div>
+
+    <!-- 隐藏的模态框用于展示详细信息 -->
+    <div id="modal" class="modal" style="display: none;">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2 id="modal-title">详情</h2>
+                <button class="modal-close" onclick="closeModal()">×</button>
+            </div>
+            <div id="modal-body" class="modal-body"></div>
+            <div class="modal-footer">
+                <button class="btn btn-primary" onclick="closeModal()">关闭</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- 加载动画 -->
+    <div id="loading-spinner" class="spinner" style="display: none;">
+        <div class="spinner-circle"></div>
+    </div>
+
+    <script src="renderer.js"></script>
+</body>
+</html>
