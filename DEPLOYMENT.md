@@ -181,7 +181,7 @@ npm run dev
 # 3. 查看 "📋 日志"
 
 # 4. 或手动在 WSL2 中启动：
-wsl -d HermesUbuntu -u root bash
+wsl -d Ubuntu-22.04 -u root bash
 hermes gateway
 
 # 5. 在另一个窗口测试连接：
@@ -213,7 +213,7 @@ npm run dev
 **解决方案**：
 ```powershell
 # 1. 在 WSL2 中检查
-wsl -d HermesUbuntu -u root bash
+wsl -d Ubuntu-22.04 -u root bash
 
 # 在 WSL2 中：
 which hermes
@@ -270,10 +270,10 @@ powershell -NoProfile -ExecutionPolicy Bypass -File "scripts/auto-setup.ps1"
 wsl --version
 
 # 3. ✓ Hermes 已安装
-wsl -d HermesUbuntu -u root bash -c "hermes --version"
+wsl -d Ubuntu-22.04 -u root bash -c "hermes --version"
 
 # 4. ✓ Gateway 可启动
-wsl -d HermesUbuntu -u root bash -c "hermes gateway &"
+wsl -d Ubuntu-22.04 -u root bash -c "hermes gateway &"
 curl http://127.0.0.1:8000/api/health
 
 # 5. ✓ Electron 可启动

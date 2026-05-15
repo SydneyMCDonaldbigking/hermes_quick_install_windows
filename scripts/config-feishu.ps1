@@ -4,7 +4,7 @@
 
 #Requires -RunAsAdministrator
 
-[string]$WSL_DISTRO_NAME = "HermesUbuntu"
+[string]$WSL_DISTRO_NAME = "Ubuntu-22.04"
 [string]$HERMES_WSL_HOME = "~/.hermes"
 
 # ============================================================

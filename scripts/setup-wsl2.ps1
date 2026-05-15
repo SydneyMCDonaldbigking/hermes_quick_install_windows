@@ -5,7 +5,7 @@
 
 #Requires -RunAsAdministrator
 
-[string]$WSL_DISTRO_NAME = "HermesUbuntu"
+[string]$WSL_DISTRO_NAME = "Ubuntu-22.04"
 [int]$REQUIRED_DISK_SPACE_GB = 10
 [int]$REQUIRED_RAM_MB = 4096
 
@@ -200,14 +200,14 @@ function Test-WSL2Installation {
     检查 WSL2 是否已安装
     
     .DESCRIPTION
-    - 执行 wsl --list，看是否有 HermesUbuntu 发行版
+    - 执行 wsl --list，看是否有 Ubuntu-22.04 发行版
     - 如果没有，返回 $false 表示需要安装
     #>
     
     Write-Log "检查 WSL2 安装状态..." "Info"
     
     try {
-        $output = wsl --list --verbose 2>&1
+        $output = (wsl --list --verbose 2>&1 | Out-String) -replace "`0", ""
         
         if ($LASTEXITCODE -ne 0) {
             Write-Log "WSL2 未安装" "Warning"
@@ -277,7 +277,7 @@ function Install-UbuntuDistribution {
     
     .DESCRIPTION
     - 从 Microsoft Store 下载 Ubuntu 22.04 LTS
-    - 命名为 "HermesUbuntu"
+    - 命名为 "Ubuntu-22.04"
     - 初始化用户账户
     #>
     
@@ -286,7 +286,7 @@ function Install-UbuntuDistribution {
     
     try {
         # 检查是否已安装 Ubuntu
-        $wslList = wsl --list 2>&1
+        $wslList = (wsl --list 2>&1 | Out-String) -replace "`0", ""
         
         if ($wslList -match "Ubuntu") {
             Write-Log "Ubuntu 发行版已存在，直接命名为 '$WSL_DISTRO_NAME'..." "Info"
@@ -315,7 +315,8 @@ function Install-UbuntuDistribution {
         
         # 设置 Ubuntu 发行版为 WSL2
         $ubuntuDistro = "Ubuntu-22.04"
-        if (wsl --list | Select-String $ubuntuDistro) {
+        $wslListAfter = (wsl --list 2>&1 | Out-String) -replace "`0", ""
+        if ($wslListAfter -match $ubuntuDistro) {
             Write-Log "设置 '$ubuntuDistro' 为 WSL2..." "Info"
             wsl --set-version $ubuntuDistro 2 2>&1 | Out-Null
         }

@@ -4,7 +4,7 @@
 
 #Requires -RunAsAdministrator
 
-[string]$WSL_DISTRO_NAME = "HermesUbuntu"
+[string]$WSL_DISTRO_NAME = "Ubuntu-22.04"
 [string]$HERMES_WSL_HOME = "~/.hermes"
 [string]$HERMES_PORT = 8000
 
@@ -46,6 +46,17 @@ function Write-Log {
     Add-Content -Path "$logPath\manage.log" -Value $message_formatted
 }
 
+function Invoke-WslBash {
+    <#
+    .SYNOPSIS
+    在 WSL 中执行 bash 脚本（避免 PowerShell 拆散引号/多行参数）
+    #>
+    param([string]$Script)
+
+    $b64 = [Convert]::ToBase64String([Text.Encoding]::UTF8.GetBytes($Script))
+    return wsl -d $WSL_DISTRO_NAME -u root -e bash -lc "echo $b64 | base64 -d | bash" 2>&1
+}
+
 # ============================================================
 # 启动 Gateway
 # ============================================================
@@ -75,14 +86,14 @@ function Start-HermesGateway {
         # 确保日志目录存在
         mkdir -p ~/.hermes/logs
         
-        # 后台启动 Gateway（关键: nohup + &）
-        nohup hermes gateway > ~/.hermes/logs/gateway.log 2>&1 &
+        # 后台启动 Gateway（v0.13+ 需使用 gateway run）
+        nohup hermes gateway run > ~/.hermes/logs/gateway.log 2>&1 &
         
         # 返回进程信息（不阻塞）
         echo "Gateway process started in background"
 "@
         
-        $output = wsl -d $WSL_DISTRO_NAME -u root -e bash -lc $bashScript 2>&1
+        $output = Invoke-WslBash -Script $bashScript
         
         if ($LASTEXITCODE -ne 0) {
             Write-Log "❌ Gateway 启动失败: $output" "Error"
@@ -131,23 +142,23 @@ function Stop-HermesGateway {
     
     try {
         # 获取进程 PID
-        $bashScript = @"
+        $bashScript = @'
         set -e
         
         # 查找 hermes gateway 进程
-        PID=\$(pgrep -f "hermes gateway" | head -1)
+        PID=$(pgrep -f "hermes gateway" | head -1)
         
-        if [ -z "\$PID" ]; then
+        if [ -z "$PID" ]; then
             echo "not_running"
             exit 0
         fi
         
         # 发送 SIGTERM
-        kill -TERM \$PID || true
+        kill -TERM $PID || true
         
         # 等待进程退出（最多 10 秒）
         for i in {1..10}; do
-            if ! kill -0 \$PID 2>/dev/null; then
+            if ! kill -0 $PID 2>/dev/null; then
                 echo "stopped"
                 exit 0
             fi
@@ -155,11 +166,11 @@ function Stop-HermesGateway {
         done
         
         # 超时，强制 SIGKILL
-        kill -9 \$PID || true
+        kill -9 $PID || true
         echo "force_killed"
-"@
+'@
         
-        $output = wsl -d $WSL_DISTRO_NAME -u root -e bash -lc $bashScript 2>&1
+        $output = Invoke-WslBash -Script $bashScript
         
         if ($output -match "not_running") {
             Write-Log "Gateway 未运行" "Info"
@@ -203,7 +214,7 @@ function Test-HermesConnection {
     
     foreach ($ip in $ips) {
         try {
-            $url = "http://${ip}:${HERMES_PORT}/health"
+            $url = "http://${ip}:${HERMES_PORT}/api/health"
             $response = Invoke-WebRequest -Uri $url -TimeoutSec 3 -ErrorAction Stop
             
             Write-Log "✓ Gateway 可访问: ${ip}:${HERMES_PORT}" "Success"
@@ -223,15 +234,15 @@ function Test-HermesConnection {
     try {
         Write-Log "尝试 WSL2 内部 IP..." "Info"
         
-        $bashScript = @"
-        hostname -I | awk '{print \$1}'
-"@
+        $bashScript = @'
+        hostname -I | awk '{print $1}'
+'@
         
-        $wslIP = wsl -d $WSL_DISTRO_NAME -u root -e bash -c $bashScript 2>&1 | Select-String "^\d+\."
+        $wslIP = Invoke-WslBash -Script $bashScript | Select-String "^\d+\."
         
         if ($wslIP) {
             $ip = $wslIP.ToString().Trim()
-            $url = "http://${ip}:${HERMES_PORT}/health"
+            $url = "http://${ip}:${HERMES_PORT}/api/health"
             
             $response = Invoke-WebRequest -Uri $url -TimeoutSec 3 -ErrorAction Stop
             
@@ -281,25 +292,25 @@ function Get-HermesStatus {
     #>
     
     try {
-        $bashScript = @"
+        $bashScript = @'
         set -e
         
         # 检查进程是否运行
-        PID=\$(pgrep -f "hermes gateway" | head -1)
+        PID=$(pgrep -f "hermes gateway" | head -1)
         
-        if [ -z "\$PID" ]; then
+        if [ -z "$PID" ]; then
             echo '{"running":false,"pid":null}'
             exit 0
         fi
         
         # 获取进程信息
-        MEMORY=\$(ps -p \$PID -o rss= | awk '{printf "%.1f", \$1/1024}')
-        STARTTIME=\$(ps -p \$PID -o lstart=)
+        MEMORY=$(ps -p $PID -o rss= | awk '{printf "%.1f", $1/1024}')
+        STARTTIME=$(ps -p $PID -o lstart=)
         
         # 计算运行时间
-        START_EPOCH=\$(date -d "\$STARTTIME" +%s)
-        CURRENT_EPOCH=\$(date +%s)
-        UPTIME=\$((CURRENT_EPOCH - START_EPOCH))
+        START_EPOCH=$(date -d "$STARTTIME" +%s)
+        CURRENT_EPOCH=$(date +%s)
+        UPTIME=$((CURRENT_EPOCH - START_EPOCH))
         
         # 检查端口监听
         if netstat -an | grep -q "LISTEN.*:8000"; then
@@ -312,19 +323,20 @@ function Get-HermesStatus {
         cat <<EOF
 {
   "running": true,
-  "pid": \$PID,
-  "memory_mb": \$MEMORY,
-  "uptime_seconds": \$UPTIME,
-  "port_status": "\$PORT_STATUS",
-  "timestamp": "\$(date '+%Y-%m-%d %H:%M:%S')"
+  "pid": $PID,
+  "memory_mb": $MEMORY,
+  "uptime_seconds": $UPTIME,
+  "port_status": "$PORT_STATUS",
+  "timestamp": "$(date '+%Y-%m-%d %H:%M:%S')"
 }
 EOF
-"@
+'@
         
-        $output = wsl -d $WSL_DISTRO_NAME -u root -e bash -lc $bashScript 2>&1
+        $output = Invoke-WslBash -Script $bashScript
         
-        # 解析 JSON
-        $statusObj = $output | ConvertFrom-Json
+        # 解析 JSON（过滤非 JSON 行）
+        $jsonLine = ($output | Where-Object { $_ -match '^\s*\{' } | Select-Object -Last 1)
+        $statusObj = $jsonLine | ConvertFrom-Json
         
         # 检查连通性
         $connTest = Test-HermesConnection -ErrorAction SilentlyContinue
@@ -430,7 +442,7 @@ function Get-HermesLogs {
         tail -50 ~/.hermes/logs/gateway.log 2>/dev/null || echo "No logs yet"
 "@
         
-        $logs = wsl -d $WSL_DISTRO_NAME -u root -e bash -c $bashScript 2>&1
+        $logs = Invoke-WslBash -Script $bashScript
         
         return @{
             success = $true

@@ -4,7 +4,7 @@
 
 #Requires -RunAsAdministrator
 
-[string]$WSL_DISTRO_NAME = "HermesUbuntu"
+[string]$WSL_DISTRO_NAME = "Ubuntu-22.04"
 [string]$HERMES_WSL_HOME = "~/.hermes"
 [string]$HERMES_INSTALL_URL = "https://raw.githubusercontent.com/NousResearch/hermes-agent/main/scripts/install.sh"
 
@@ -337,7 +337,7 @@ function Test-HermesConnectivity {
         # 尝试连接
         Write-Log "检查 Gateway 端口连通性..." "Info"
         try {
-            $response = Invoke-WebRequest -Uri "http://localhost:8000/health" -TimeoutSec 5 -ErrorAction SilentlyContinue
+            $response = Invoke-WebRequest -Uri "http://localhost:8000/api/health" -TimeoutSec 5 -ErrorAction SilentlyContinue
             Write-Log "✓ Hermes Gateway 已启动 (端口 8000)" "Success"
         }
         catch {

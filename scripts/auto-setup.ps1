@@ -4,7 +4,7 @@
 
 #Requires -RunAsAdministrator
 
-[string]$WSL_DISTRO_NAME = "HermesUbuntu"
+[string]$WSL_DISTRO_NAME = "Ubuntu-22.04"
 
 # ============================================================
 # 颜色输出
@@ -71,8 +71,9 @@ function Test-WSL2Installed {
             return $false
         }
         
-        # 方法 2: 检查是否有 HermesUbuntu 发行版
-        $distros = wsl --list --quiet 2>&1
+        # 方法 2: 检查是否有 Ubuntu-22.04 发行版
+        # wsl --list 在部分环境下输出 UTF-16，需去掉空字符再匹配
+        $distros = (wsl --list --quiet 2>&1 | Out-String) -replace "`0", ""
         if ($distros -match $WSL_DISTRO_NAME) {
             Write-Status "✓ WSL2 已安装 ($WSL_DISTRO_NAME)" "Success"
             return $true

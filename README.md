@@ -235,7 +235,7 @@ Get-Content "$env:LOCALAPPDATA\hermes\logs\setup.log" -Tail 50
 ```powershell
 # 在 UI 中点击 "🌐 修复网络"
 # 或手动在 WSL2 中启动
-wsl -d HermesUbuntu -u root bash
+wsl -d Ubuntu-22.04 -u root bash
 hermes gateway
 
 # 测试连接
