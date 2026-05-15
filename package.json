@@ -20,12 +20,16 @@
     "dist": "electron-builder",
     "pack": "electron-builder --dir",
     "prestart": "npm run check-env",
-    "check-env": "powershell -NoProfile -ExecutionPolicy Bypass -File ./scripts/check-env.ps1"
+    "check-env": "powershell -NoProfile -ExecutionPolicy Bypass -File ./scripts/check-env.ps1",
+    "gen-assets": "node scripts/gen-assets.cjs",
+    "prebuild": "npm run gen-assets"
   },
   "devDependencies": {
-    "electron": "^latest",
-    "electron-builder": "^latest",
-    "cross-env": "^7.0.3"
+    "electron": "^34.0.0",
+    "electron-builder": "^25.1.8",
+    "cross-env": "^7.0.3",
+    "jimp": "^1.6.0",
+    "png-to-ico": "^2.1.8"
   },
   "dependencies": {
     "sudo-prompt": "^9.2.1",
@@ -40,7 +44,6 @@
       "src/**/*",
       "public/**/*",
       "scripts/**/*",
-      "node_modules/**/*",
       "package.json"
     ],
     "directories": {
@@ -64,10 +67,8 @@
       ],
       "certificateFile": null,
       "certificatePassword": null,
-      "signingHashAlgorithms": [
-        "sha256"
-      ],
       "sign": null,
+      "signAndEditExecutable": false,
       "icon": "assets/icon.ico"
     },
     "nsis": {
@@ -77,11 +78,7 @@
       "createStartMenuShortcut": true,
       "shortcutName": "Hermes 启动器",
       "artifactName": "${productName}-Setup-${version}-${arch}.${ext}",
-      "installerIcon": "assets/installerIcon.ico",
-      "uninstallerIcon": "assets/installerIcon.ico",
-      "installerHeader": "assets/installerHeader.bmp",
-      "installerSidebar": "assets/installerSidebar.bmp",
-      "include": "assets/installer.nsi"
+      "include": "assets/installer.nsh"
     },
     "portable": {
       "artifactName": "${productName}-${version}-portable.${ext}"
